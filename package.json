@@ -2,14 +2,15 @@
   "name": "heiverden",
   "description": "An Aurelia client application.",
   "version": "0.1.0",
-  "repository": {
-    "type": "???",
-    "url": "???"
+  "engines":{
+    "node":"6.9.1"
   },
+  "repository": "github.com:andreny/testing",
   "license": "MIT",
   "dependencies": {
     "aurelia-bootstrapper": "^1.0.0",
     "aurelia-animator-css": "^1.0.0",
+    "aurelia-cli": "^0.24.0",
     "bluebird": "^3.4.1",
     "requirejs": "^2.3.2",
     "text": "github:requirejs/text#latest"
@@ -44,5 +45,8 @@
     "karma-chrome-launcher": "^1.0.1",
     "karma-jasmine": "^1.0.2",
     "karma-typescript-preprocessor": "^0.2.1"
+  },
+  "scripts":{
+    "build-aurelia": "au build"
   }
 }

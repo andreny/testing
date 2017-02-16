@@ -38,14 +38,18 @@ IF NOT DEFINED NEXT_MANIFEST_PATH (
   )
 )
 
+IF NOT DEFINED AURELIA_ENVIRONMENT (
+  SET AURELIA_ENVIRONMENT=dev
+)
+
 IF NOT DEFINED KUDU_SYNC_CMD (
   :: Install kudu sync
   echo Installing Kudu Sync
-  call npm install kudusync -g --silent
+  call npm install kudusync --silent
   IF !ERRORLEVEL! NEQ 0 goto error
 
   :: Locally just running "kuduSync" would also work
-  SET KUDU_SYNC_CMD=%appdata%\npm\kuduSync.cmd
+  SET KUDU_SYNC_CMD=kuduSync
 )
 goto Deployment
 
@@ -88,22 +92,28 @@ goto :EOF
 :Deployment
 echo Handling node.js deployment.
 
-:: 1. KuduSync
-IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
-  IF !ERRORLEVEL! NEQ 0 goto error
-)
-
-:: 2. Select node version
+:: 1. Select node version
 call :SelectNodeVersion
 
-:: 3. Install npm packages
-IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  pushd "%DEPLOYMENT_TARGET%"
+:: 2. Install npm packages
+IF EXIST "package.json" (
   call :ExecuteCmd !NPM_CMD! install --production
+   IF !ERRORLEVEL! NEQ 0 goto error
+ )
+
+:: 3. Build Aurelia application (%AURELIA_ENVIRONMENT%)
+IF EXIST "package.json" (
+  call :ExecuteCmd !NPM_CMD! run build-aurelia -- --env %AURELIA_ENVIRONMENT%
   IF !ERRORLEVEL! NEQ 0 goto error
-  popd
 )
+
+:: 4. KuduSync
+IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
+  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.deployment;deploy.cmd;.vscode;aurelia_project;custom_typings;src;test;typings;.gitignore;.editorconfig;.karma.conf.json;LICENSE;package.json;tsconfig.json;tslint.json;typings.json;node_modules"
+   IF !ERRORLEVEL! NEQ 0 goto error
+ )
+
+
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 goto end
